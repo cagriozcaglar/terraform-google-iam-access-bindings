@@ -1,0 +1,71 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: TerraformBlueprint
+metadata:
+  name: terraform-google-iam-bindings
+  source:
+    type: git
+    # Replace with the actual source repository
+    git:
+      repo: https://github.com/GoogleCloudPlatform/terraform-google-iam-bindings.git
+      dir: /
+  version: 1.0.0
+spec:
+  info:
+    title: IAM Access Bindings
+    actuationTool:
+      type: Terraform
+      flavor: HCL
+      version: ">= 1.0"
+    descriptions:
+      tagline: A generic module for managing authoritative IAM bindings on Google Cloud resources.
+      detailed: |
+        This module provides a generic and reusable way to manage authoritative IAM bindings
+        for various Google Cloud resources. It uses a map-based input to create
+        `google_*_iam_binding` resources, which are authoritative and will overwrite any
+        existing members for a given role on a specific resource. This approach is ideal
+        for managing a complete and definitive set of members for specific roles.
+        Supported resource types: project, storage_bucket, service_account.
+  customization:
+    variables:
+      - name: bindings
+        description: "A map of IAM bindings to apply, where each key is a unique name for the binding and the value is an object describing the binding's type, resource ID, role, and members."
+        type: object
+        default: {}
+        required: false
+    variableGroups:
+      - name: IAM Bindings Configuration
+        description: Configure the IAM bindings to be created.
+        variables:
+          - bindings
+    outputs:
+      - name: project_bindings
+        description: "A map of the created project-level IAM bindings, keyed by the binding name from the input variable."
+      - name: storage_bucket_bindings
+        description: "A map of the created storage bucket-level IAM bindings, keyed by the binding name from the input variable."
+      - name: service_account_bindings
+        description: "A map of the created service account-level IAM bindings, keyed by the binding name from the input variable."
+  requirements:
+    roles:
+      - level: Project
+        roles:
+          - roles/resourcemanager.projectIamAdmin
+          - roles/storage.admin
+          - roles/iam.serviceAccountAdmin
+    services:
+      - cloudresourcemanager.googleapis.com
+      - iam.googleapis.com
+      - storage.googleapis.com
