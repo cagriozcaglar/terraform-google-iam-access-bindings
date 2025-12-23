@@ -1,0 +1,88 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# TF Blueprint Metadata
+#
+# Generated from the Terraform module code.
+#
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: BlueprintMetadata
+metadata:
+  name: terraform-google-iam-bindings
+  source:
+    type: git
+    location: https://github.com/GoogleCloudPlatform/terraform-google-iam-bindings # Placeholder URL
+  version: 1.0.0 # Placeholder version
+  actuationTool:
+    type: Terraform
+    version: ">= 1.3"
+  title: IAM Bindings Module
+  descriptions:
+    tagline: A flexible module for managing IAM member bindings on various GCP resources.
+    detailed: |-
+      This module simplifies the process of creating IAM member bindings for Google Cloud Projects,
+      Storage Buckets, and Pub/Sub Topics. It uses a map-based input to define multiple
+      bindings across different resources in a declarative way, supporting conditional IAM policies.
+  labels:
+    iam: ""
+    gcp: ""
+    security: ""
+spec:
+  requirements:
+    roles:
+      - level: Project
+        role: roles/resourcemanager.projectIamAdmin
+        description: Required to set IAM policies on projects.
+      - level: Project
+        role: roles/storage.admin
+        description: Required to set IAM policies on storage buckets.
+      - level: Project
+        role: roles/pubsub.admin
+        description: Required to set IAM policies on Pub/Sub topics.
+    permissions:
+      - resourcemanager.projects.setIamPolicy
+      - storage.buckets.setIamPolicy
+      - pubsub.topics.setIamPolicy
+    services:
+      - cloudresourcemanager.googleapis.com
+      - storage.googleapis.com
+      - pubsub.googleapis.com
+  interfaces:
+    variables:
+      - name: bindings
+        description: |-
+          A map of IAM bindings to create. The key of the map is a logical name for the binding, used as a part of the `for_each` key in the underlying resources.
+          The value is an object with the following attributes:
+          - `resource_type`: (Required|String) The type of resource to apply the binding to. Supported values are: `project`, `storage_bucket`, `pubsub_topic`.
+          - `resource_id`: (Required|String) The identifier of the resource.
+            - For `project`: The project ID.
+            - For `storage_bucket`: The bucket name.
+            - For `pubsub_topic`: The full topic name in the format `projects/{project}/topics/{topic}`.
+          - `role`: (Required|String) The IAM role to assign (e.g., `roles/storage.objectViewer`).
+          - `members`: (Required|List of Strings) A list of members to grant the role to. See the [IAM Overview](https://cloud.google.com/iam/docs/overview#iam-principals) for a list of valid member types.
+          - `condition`: (Optional|Object) An IAM condition block. See the [IAM Conditions documentation](https://cloud.google.com/iam/docs/conditions-overview) for details. It contains the following attributes:
+            - `title`: (Required|String) A title for the condition.
+            - `description`: (Optional|String) A description for the condition.
+            - `expression`: (Required|String) The Common Expression Language (CEL) expression.
+        varType: map(object({ resource_type = string, resource_id = string, role = string, members = list(string), condition = optional(object({ title = string, description = optional(string), expression = string })) }))
+        defaultValue: {}
+        required: false
+    variableGroups:
+      - name: IAM Configuration
+        description: Configure all IAM bindings for various resources.
+        variables:
+          - bindings
+    outputs:
+      - name: bindings
+        description: A map of the created IAM member bindings, keyed by the logical name provided in the input `bindings` variable. Each value contains the resource identifier, role, members, and the etag of the resource's IAM policy.
