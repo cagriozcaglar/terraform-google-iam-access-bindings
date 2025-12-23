@@ -1,0 +1,84 @@
+#
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: TerraformBlueprint
+metadata:
+  name: terraform-google-iam-member-bindings
+  source:
+    type: git
+    git:
+      repo: https://github.com/GoogleCloudPlatform/terraform-google-iam-member-bindings
+      dir: /
+  version: 1.0.0
+spec:
+  terraformVersion: ">= 1.0"
+  info:
+    title: Google Cloud IAM Member Bindings
+    tagline: A Terraform module to manage non-authoritative IAM member bindings for various GCP resources.
+    detailed: This module simplifies the management of individual IAM member bindings for Google Cloud Projects, Service Accounts, and Storage Buckets. It uses non-authoritative `iam_member` resources to avoid conflicts with other IAM management tools.
+    icon: static/icon.png
+    examples:
+      - name: simple_example
+        location: examples/simple_example
+        title: Simple IAM Bindings
+        description: A basic example of how to use the module to apply IAM bindings to a project, service account, and storage bucket.
+  requirements:
+    services:
+      - cloudresourcemanager.googleapis.com
+      - iam.googleapis.com
+      - storage.googleapis.com
+    roles:
+      - level: Project
+        roles:
+          - roles/resourcemanager.projectIamAdmin
+          - roles/iam.serviceAccountAdmin
+          - roles/storage.admin
+    permissions:
+      - resourcemanager.projects.setIamPolicy
+      - iam.serviceAccounts.setIamPolicy
+      - storage.buckets.setIamPolicy
+  interface:
+    variables:
+      - name: project_bindings
+        description: A map of project-level IAM bindings. The key is the project ID, and the value is a map of IAM roles to a list of members and an optional condition.
+        varType: map(map(object({ members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) })))
+        required: false
+        defaultValue: {}
+      - name: service_account_bindings
+        description: A map of service account-level IAM bindings. The key is the full service account ID, and the value is a map of IAM roles to a list of members and an optional condition.
+        varType: map(map(object({ members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) })))
+        required: false
+        defaultValue: {}
+      - name: storage_bucket_bindings
+        description: A map of storage bucket-level IAM bindings. The key is the bucket name, and the value is a map of IAM roles to a list of members and an optional condition.
+        varType: map(map(object({ members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) })))
+        required: false
+        defaultValue: {}
+    variableGroups:
+      - name: IAM Bindings
+        description: Configure IAM member bindings for different GCP resource types.
+        variables:
+          - project_bindings
+          - service_account_bindings
+          - storage_bucket_bindings
+    outputs:
+      - name: project_iam_members
+        description: A map of the created `google_project_iam_member` resources.
+      - name: service_account_iam_members
+        description: A map of the created `google_service_account_iam_member` resources.
+      - name: storage_bucket_iam_members
+        description: A map of the created `google_storage_bucket_iam_member` resources.
