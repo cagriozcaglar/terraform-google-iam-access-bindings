@@ -1,0 +1,95 @@
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: BlueprintMetadata
+metadata:
+  name: terraform-google-iam-binding
+  title: Google Cloud IAM Bindings
+  source:
+    repo: https://github.com/GoogleCloudPlatform/terraform-google-iam-binding
+    sourceType: git
+  version: 1.0.0
+  actuationTool:
+    type: Terraform
+    version:
+      - ">= 1.0"
+  description:
+    tagline: A Terraform module for creating authoritative IAM bindings on various GCP resources.
+    detailed: This module allows for the creation of authoritative IAM bindings (`*_iam_binding`) on Google Cloud resources such as Projects, Folders, Organizations, Storage Buckets, and Service Accounts. It supports conditional bindings.
+  examples:
+    - name: simple_project_binding
+      location: examples/simple_project_binding
+    - name: conditional_folder_binding
+      location: examples/conditional_folder_binding
+    - name: multiple_bindings
+      location: examples/multiple_bindings
+  labels:
+    gcp: ""
+    iam: ""
+    security: ""
+  documentations:
+    - title: README
+      url: README.md
+spec:
+  requirements:
+    services:
+      - cloudresourcemanager.googleapis.com
+      - iam.googleapis.com
+      - storage.googleapis.com
+    roles:
+      - level: project
+        roles:
+          - roles/resourcemanager.projectIamAdmin
+          - roles/storage.admin
+          - roles/iam.serviceAccountAdmin
+      - level: folder
+        roles:
+          - roles/resourcemanager.folderIamAdmin
+      - level: organization
+        roles:
+          - roles/resourcemanager.organizationIamAdmin
+  interfaces:
+    variables:
+      - name: project_bindings
+        description: "A map of project-level IAM bindings. The key of each entry is a logical name for the binding. The value is an object with 'project' (the project ID), 'role', and 'members' attributes. An optional 'condition' block can also be specified."
+        varType: "map(object({ project = string, role = string, members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) }))"
+        defaultValue: {}
+        required: false
+      - name: folder_bindings
+        description: "A map of folder-level IAM bindings. The key of each entry is a logical name for the binding. The value is an object with 'folder' (the folder ID in the format 'folders/123456'), 'role', and 'members' attributes. An optional 'condition' block can also be specified."
+        varType: "map(object({ folder = string, role = string, members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) }))"
+        defaultValue: {}
+        required: false
+      - name: organization_bindings
+        description: "A map of organization-level IAM bindings. The key of each entry is a logical name for the binding. The value is an object with 'org_id' (the organization ID), 'role', and 'members' attributes. An optional 'condition' block can also be specified."
+        varType: "map(object({ org_id = string, role = string, members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) }))"
+        defaultValue: {}
+        required: false
+      - name: storage_bucket_bindings
+        description: "A map of storage bucket-level IAM bindings. The key of each entry is a logical name for the binding. The value is an object with 'bucket' (the bucket name), 'role', and 'members' attributes. An optional 'condition' block can also be specified."
+        varType: "map(object({ bucket = string, role = string, members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) }))"
+        defaultValue: {}
+        required: false
+      - name: service_account_bindings
+        description: "A map of service account-level IAM bindings. The key of each entry is a logical name for the binding. The value is an object with 'service_account_id' (the full name of the service account), 'role', and 'members' attributes. An optional 'condition' block can also be specified."
+        varType: "map(object({ service_account_id = string, role = string, members = list(string), condition = optional(object({ title = string, expression = string, description = optional(string) })) }))"
+        defaultValue: {}
+        required: false
+    variableGroups:
+      - name: iam-bindings
+        description: "Configuration for IAM bindings on different resource levels. Leave a map empty to create no bindings for that resource type."
+        variables:
+          - project_bindings
+          - folder_bindings
+          - organization_bindings
+          - storage_bucket_bindings
+          - service_account_bindings
+    outputs:
+      - name: project_bindings
+        description: "A map of the created project IAM binding resources, keyed by the logical names provided in the input."
+      - name: folder_bindings
+        description: "A map of the created folder IAM binding resources, keyed by the logical names provided in the input."
+      - name: organization_bindings
+        description: "A map of the created organization IAM binding resources, keyed by the logical names provided in the input."
+      - name: storage_bucket_bindings
+        description: "A map of the created storage bucket IAM binding resources, keyed by the logical names provided in the input."
+      - name: service_account_bindings
+        description: "A map of the created service account IAM binding resources, keyed by the logical names provided in the input."
