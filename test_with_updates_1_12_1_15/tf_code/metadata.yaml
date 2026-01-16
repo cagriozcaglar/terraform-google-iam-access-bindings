@@ -1,0 +1,83 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: blueprints.cloud.google.com/v1alpha1
+kind: TerraformBlueprint
+metadata:
+  name: terraform-google-iam-bindings
+  source:
+    sourceType: git
+    git:
+      repo: https://github.com/GoogleCloudPlatform/terraform-google-iam-bindings # Placeholder URL
+      dir: /
+  version: 1.0.0 # Placeholder version
+  actuationTool:
+    flavor: terraform
+    version: ">= 1.3"
+  title: IAM Bindings Module
+  description:
+    tagline: A flexible module to create IAM bindings for various Google Cloud resources.
+    detailed: |-
+      This module simplifies the management of Google Cloud IAM by allowing the creation of multiple IAM bindings across different resource types (projects, folders, organizations, and Cloud Storage buckets) from a single, unified input map.
+  icon: assets/icon.svg # Placeholder path
+  documentation:
+    - title: README
+      url: README.md # Placeholder path
+spec:
+  terraform:
+    variables:
+      - name: bindings
+        description: |-
+          A map of IAM bindings to be created, with the map key being a logical name for the binding.
+
+          Each binding object in the map supports the following attributes:
+          - `role`: (Required) The role to be assigned (e.g., 'roles/storage.objectViewer').
+          - `members`: (Required) A set of members to be granted the role. See the official documentation for valid member formats: https://cloud.google.com/iam/docs/overview#iam-principals
+          - `project`: (Optional) The ID of the project to apply the binding to.
+          - `folder`: (Optional) The ID of the folder to apply the binding to. Must be in the format 'folders/1234567890'.
+          - `organization`: (Optional) The numeric ID of the organization to apply the binding to.
+          - `bucket`: (Optional) The name of the Cloud Storage bucket to apply the binding to.
+          - `condition`: (Optional) An object that specifies a conditional IAM binding.
+            - `title`: (Required) The title of the condition.
+            - `expression`: (Required) The Common Expression Language (CEL) expression of the condition.
+            - `description`: (Optional) An optional description of the condition.
+
+          Note: For each binding object, exactly one of `project`, `folder`, `organization`, or `bucket` must be specified.
+        type: map(object({ role = string, members = set(string), project = optional(string), folder = optional(string), organization = optional(string), bucket = optional(string), condition = optional(object({ title = string, description = optional(string), expression = string })) }))
+        default: {}
+        required: false
+    outputs:
+      - name: project_bindings
+        description: A map of the created `google_project_iam_binding` resources, keyed by the logical names from the input `bindings` variable.
+      - name: folder_bindings
+        description: A map of the created `google_folder_iam_binding` resources, keyed by the logical names from the input `bindings` variable.
+      - name: organization_bindings
+        description: A map of the created `google_organization_iam_binding` resources, keyed by the logical names from the input `bindings` variable.
+      - name: bucket_bindings
+        description: A map of the created `google_storage_bucket_iam_binding` resources, keyed by the logical names from the input `bindings` variable.
+      - name: all_bindings
+        description: A structured map containing all created IAM binding resources, categorized by their resource type (project, folder, organization, bucket).
+  requirements:
+    roles:
+      - level: project
+        role: roles/resourcemanager.projectIamAdmin
+      - level: folder
+        role: roles/resourcemanager.folderIamAdmin
+      - level: organization
+        role: roles/resourcemanager.organizationAdmin
+      - level: project # For bucket IAM
+        role: roles/storage.admin
+    services:
+      - cloudresourcemanager.googleapis.com
+      - storage.googleapis.com
